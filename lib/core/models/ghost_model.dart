@@ -167,53 +167,66 @@ class Enemy{
     Box? ghostBox = boxes.firstWhere((element) => element.checkoffsetIn(position!.offset!));
 
     Offset ghostPos = Offset(ghostBox.position!.columnIndex.toDouble(), ghostBox.position!.rowIndex.toDouble());
-    late Offset playerPos;
+    late Offset targetPos;
 
-    if(index == 0) { //Blinky
-      playerPos = Offset(playerBox.position!.columnIndex.toDouble(), playerBox.position!.rowIndex.toDouble());
-    }else if(index == 1){ //Clyde
-      playerPos = Offset(playerBox.position!.columnIndex.toDouble(), playerBox.position!.rowIndex.toDouble());
-    }else if(index == 2){ //Pinky
+    const double maxDX = 23.0;
+    const double minDX = 1.0;
+    const double maxDY = 16.0;
+    const double minDY = 1.0;
 
+    if(index == 0) { // Blinky
+      targetPos = Offset(playerBox.position!.columnIndex.toDouble(), playerBox.position!.rowIndex.toDouble());
+    } else if(index == 1) { // Clyde
+      double distance = (Offset(playerBox.position!.columnIndex.toDouble(), playerBox.position!.rowIndex.toDouble()) - ghostPos).distance;
+      if (distance > 5) {
+        targetPos = Offset(playerBox.position!.columnIndex.toDouble(), playerBox.position!.rowIndex.toDouble());
+      } else {
+        targetPos = const Offset(1, 1);
+      }
+    } else if(index == 2) { // Pinky
       double dx = playerBox.position!.columnIndex.toDouble();
       double dy = playerBox.position!.rowIndex.toDouble();
 
       switch(playerBox.position!.direction){
-        case Direction.Top: dy += -2; break;
+        case Direction.Top: dy -= 2; break;
         case Direction.Bottom: dy += 2; break;
         case Direction.Right: dx += 2; break;
-        case Direction.Left: dx += -2; break;
+        case Direction.Left: dx -= 2; break;
       }
 
-      if(dx > 23){
-        dx = 23.0;
-      }
-      if(dx < 1){
-        dx = 1;
-      }
-      if(dy > 16){
-        dy = 16;
-      }
-      if(dy < 1){
-        dy = 1;
+      dx = dx.clamp(minDX, maxDX);
+      dy = dy.clamp(minDY, maxDY);
+
+      targetPos = Offset(dx, dy);
+    } else { // Inky
+      double dx = playerBox.position!.columnIndex.toDouble();
+      double dy = playerBox.position!.rowIndex.toDouble();
+
+      switch(playerBox.position!.direction){
+        case Direction.Top: dy -= 1; break;
+        case Direction.Bottom: dy += 1; break;
+        case Direction.Right: dx += 1; break;
+        case Direction.Left: dx -= 1; break;
       }
 
-      playerPos = Offset(dx, dy);
-    }else{ //Inky
-      playerPos = Offset(playerBox.position!.columnIndex.toDouble(), playerBox.position!.rowIndex.toDouble());
+      dx = dx.clamp(minDX, maxDX);
+      dy = dy.clamp(minDY, maxDY);
+
+      targetPos = Offset(dx, dy);
     }
+
 
     final result = AStar(
       rows: boxSize.row,
       columns: boxSize.column,
       start: ghostPos,
-      end: playerPos,
+      end: targetPos,
       barriers: List<Offset>.from(barriers.expand((element) => element)),
       withDiagonal: false,
     ).findThePath();
 
     targetOffsets = result.map((e) => e.scale(size.width, size.height)).toList();
-    targetOffsets.add(playerPos);
+    targetOffsets.add(targetPos);
 
     if (!die) {
       generateRandom();
